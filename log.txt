@@ -1,0 +1,50 @@
+--- Starting MNIST Experiment ---
+Training on MNIST using cuda
+100%|██████████| 9.91M/9.91M [00:00<00:00, 14.2MB/s]
+100%|██████████| 28.9k/28.9k [00:00<00:00, 333kB/s]
+100%|██████████| 1.65M/1.65M [00:00<00:00, 3.20MB/s]
+100%|██████████| 4.54k/4.54k [00:00<00:00, 7.26MB/s]
+Epoch [1/10], Loss: 0.1651
+Epoch [2/10], Loss: 0.0583
+Epoch [3/10], Loss: 0.0438
+Epoch [4/10], Loss: 0.0342
+Epoch [5/10], Loss: 0.0292
+Epoch [6/10], Loss: 0.0255
+Epoch [7/10], Loss: 0.0217
+Epoch [8/10], Loss: 0.0202
+Epoch [9/10], Loss: 0.0173
+Epoch [10/10], Loss: 0.0169
+Accuracy on MNIST: 99.18%
+[MNIST] FGSM_Untargeted Success Rate: 87.00%
+[MNIST] FGSM_Targeted Success Rate: 19.50%
+[MNIST] PGD_Untargeted Success Rate: 100.00%
+[MNIST] PGD_Targeted Success Rate: 100.00%
+
+--- Starting CIFAR-10 Experiment ---
+Training on CIFAR-10 using cuda
+100%|██████████| 170M/170M [00:05<00:00, 29.0MB/s]
+Epoch [1/20], Loss: 1.3615
+Epoch [2/20], Loss: 1.0132
+Epoch [3/20], Loss: 0.8865
+Epoch [4/20], Loss: 0.8139
+Epoch [5/20], Loss: 0.7575
+Epoch [6/20], Loss: 0.7113
+Epoch [7/20], Loss: 0.6754
+Epoch [8/20], Loss: 0.6377
+Epoch [9/20], Loss: 0.6099
+Epoch [10/20], Loss: 0.5826
+Epoch [11/20], Loss: 0.5518
+Epoch [12/20], Loss: 0.5354
+Epoch [13/20], Loss: 0.5163
+Epoch [14/20], Loss: 0.4912
+Epoch [15/20], Loss: 0.4835
+Epoch [16/20], Loss: 0.4575
+Epoch [17/20], Loss: 0.4427
+Epoch [18/20], Loss: 0.4289
+Epoch [19/20], Loss: 0.4079
+Epoch [20/20], Loss: 0.3980
+Accuracy on CIFAR-10: 81.18%
+[CIFAR-10] FGSM_Untargeted Success Rate: 100.00%
+[CIFAR-10] FGSM_Targeted Success Rate: 57.50%
+[CIFAR-10] PGD_Untargeted Success Rate: 100.00%
+[CIFAR-10] PGD_Targeted Success Rate: 100.00%
