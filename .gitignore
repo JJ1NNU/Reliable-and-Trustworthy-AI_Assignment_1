@@ -1,0 +1,20 @@
+### Python 관련
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+### PyCharm 관련
+.idea/
+
+### 데이터 및 모델 관련
+*.pt
+*.pth
+*.ckpt
+data/
+
+### 운영체제 관련
+.DS_Store
+Thumbs.db
