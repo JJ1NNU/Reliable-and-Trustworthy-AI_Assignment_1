@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
+# CNN model
 class CNN(nn.Module):
     def __init__(self, dataset='mnist'):
         super(CNN, self).__init__()
@@ -57,6 +58,7 @@ class CNN(nn.Module):
         x = self.fc_layers(x)
         return x
 
+# CNN train function
 def train_and_test(dataset, epochs=10, batch_size=128, lr=0.001):
     print(f"Training on {dataset.upper()} using {device}")
 
@@ -111,18 +113,20 @@ def train_and_test(dataset, epochs=10, batch_size=128, lr=0.001):
         for images, labels in test_loader:
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
-            _, predicted = torch.max(outputs.data, 1)
+            _, pred = torch.max(outputs.data, 1)
             total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            correct += (pred == labels).sum().item()
     accuracy = 100 * correct / total
 
     print(f"Accuracy on {dataset.upper()}: {accuracy:.2f}%")
 
     return model
 
+# Attack functions
 def fgsm_targeted(dataset, model, x, target, eps):
     x_adv = x.clone().detach().requires_grad_(True)
-    # x는 normalize되지 않은 원본 데이터(추후 visualization을 위해). 정규화 필요
+    # x는 normalize되지 않은 원본 데이터를 넣습니다(추후 visualization을 위해).
+    # 따라서 정규화 필요 (normalize 함수 아래에 정의)
     norm_x = normalize(x_adv, dataset)
     output = model(norm_x)
     loss = nn.CrossEntropyLoss()(output, target)
@@ -191,8 +195,8 @@ def normalize(x, dataset):
         return transforms.Normalize((0.1307,), (0.3081,))(x)
     return transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(x)
 
-
-def evaluate_attack(dataset, model, eps, k=None, eps_step=None):
+# Evaluate attack success rate
+def evaluate_attack(dataset, model, eps, k, eps_step):
     model.eval()
     os.makedirs('results', exist_ok=True)
 
@@ -205,7 +209,7 @@ def evaluate_attack(dataset, model, eps, k=None, eps_step=None):
 
     loader = DataLoader(test_set, batch_size=1, shuffle=False)
 
-    attack_list= ['FGSM_Untargeted', 'FGSM_Targeted', 'PGD_Untargeted', 'PGD_Targeted']
+    attack_list= ['FGSM_Targeted', 'FGSM_Untargeted', 'PGD_Targeted', 'PGD_Untargeted']
 
     for attack in attack_list:
         success = 0
@@ -216,26 +220,27 @@ def evaluate_attack(dataset, model, eps, k=None, eps_step=None):
                 break
             img, label = img.to(device), label.to(device)
 
-            # random target
+            # Targeted attack: random target
             if 'Targeted' in attack:
                 target = label
                 while target == label:
                     target = torch.randint(0, 10, (1,)).to(device)
 
-            # 공격
-            if attack == 'FGSM_Untargeted':
-                adv_img = fgsm_untargeted(dataset, model, img, label, eps)
-
-            elif attack == 'FGSM_Targeted':
+            # attacks
+            if attack == 'FGSM_Targeted':
                 adv_img = fgsm_targeted(dataset, model, img, target, eps)
 
-            elif attack == 'PGD_Untargeted':
-                adv_img = pgd_untargeted(dataset, model, img, label, k, eps, eps_step)
+            elif attack == 'FGSM_Untargeted':
+                adv_img = fgsm_untargeted(dataset, model, img, label, eps)
 
             elif attack == 'PGD_Targeted':
                 adv_img = pgd_targeted(dataset, model, img, target, k, eps, eps_step)
 
-            # 평가
+            elif attack == 'PGD_Untargeted':
+                adv_img = pgd_untargeted(dataset, model, img, label, k, eps, eps_step)
+
+
+            # evaluation
             with torch.no_grad():
                 _, pred_orig = torch.max(model(normalize(img, dataset)), 1)
                 _, pred_adv = torch.max(model(normalize(adv_img, dataset)), 1)
@@ -259,25 +264,26 @@ def evaluate_attack(dataset, model, eps, k=None, eps_step=None):
         print(f"[{dataset}] {attack} Success Rate: {success / 200 * 100:.2f}%")
         save_plot(visualize_set, dataset, attack)
 
-
+# save results PNG
 def save_plot(samples, dataset, attack):
     fig, axes = plt.subplots(5, 3, figsize=(10, 15))
     for i, s in enumerate(samples):
+        # tensor -> numpy
         orig, adv = s['orig'].numpy(), s['adv'].numpy()
         if dataset == 'CIFAR-10':
             orig, adv = np.transpose(orig, (1, 2, 0)), np.transpose(adv, (1, 2, 0))
 
-        # Original
+        # Original img
         axes[i, 0].imshow(orig, cmap='gray' if dataset == 'MNIST' else None)
         axes[i, 0].set_title(f"Original ({s['orig_label']})")
         axes[i, 0].axis('off')
 
-        # Adversarial
+        # Adversarial img
         axes[i, 1].imshow(adv, cmap='gray' if dataset == 'MNIST' else None)
         axes[i, 1].set_title(f"Adv (Pred: {s['adv_pred']})")
         axes[i, 1].axis('off')
 
-        # Perturbation
+        # Perturbation img (x10)
         diff = np.clip((adv - orig) * 10, 0, 1)
         axes[i, 2].imshow(diff, cmap='gray' if dataset == 'MNIST' else None)
         axes[i, 2].set_title("Perturbation (x10)")

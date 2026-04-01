@@ -15,10 +15,10 @@ Epoch [8/10], Loss: 0.0202
 Epoch [9/10], Loss: 0.0173
 Epoch [10/10], Loss: 0.0169
 Accuracy on MNIST: 99.18%
-[MNIST] FGSM_Untargeted Success Rate: 87.00%
 [MNIST] FGSM_Targeted Success Rate: 19.50%
-[MNIST] PGD_Untargeted Success Rate: 100.00%
+[MNIST] FGSM_Untargeted Success Rate: 87.00%
 [MNIST] PGD_Targeted Success Rate: 100.00%
+[MNIST] PGD_Untargeted Success Rate: 100.00%
 
 --- Starting CIFAR-10 Experiment ---
 Training on CIFAR-10 using cuda
@@ -44,7 +44,7 @@ Epoch [18/20], Loss: 0.4289
 Epoch [19/20], Loss: 0.4079
 Epoch [20/20], Loss: 0.3980
 Accuracy on CIFAR-10: 81.18%
-[CIFAR-10] FGSM_Untargeted Success Rate: 100.00%
 [CIFAR-10] FGSM_Targeted Success Rate: 57.50%
-[CIFAR-10] PGD_Untargeted Success Rate: 100.00%
+[CIFAR-10] FGSM_Untargeted Success Rate: 100.00%
 [CIFAR-10] PGD_Targeted Success Rate: 100.00%
+[CIFAR-10] PGD_Untargeted Success Rate: 100.00%
