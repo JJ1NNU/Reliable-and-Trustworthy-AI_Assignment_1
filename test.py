@@ -196,7 +196,7 @@ def normalize(x, dataset):
     return transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))(x)
 
 # Evaluate attack success rate
-def evaluate_attack(dataset, model, eps, k, eps_step):
+def evaluate_attack(dataset, model, eps_list, k, eps_step):
     model.eval()
     os.makedirs('results', exist_ok=True)
 
@@ -211,61 +211,62 @@ def evaluate_attack(dataset, model, eps, k, eps_step):
 
     attack_list= ['FGSM_Targeted', 'FGSM_Untargeted', 'PGD_Targeted', 'PGD_Untargeted']
 
-    for attack in attack_list:
-        success = 0
-        visualize_set = []
+    for eps in eps_list:
+        for attack in attack_list:
+            success = 0
+            visualize_set = []
 
-        for i, (img, label) in enumerate(loader):
-            if i >= 200: # 200 samples
-                break
-            img, label = img.to(device), label.to(device)
+            for i, (img, label) in enumerate(loader):
+                if i >= 200: # 200 samples
+                    break
+                img, label = img.to(device), label.to(device)
 
-            # Targeted attack: random target
-            if 'Targeted' in attack:
-                target = label
-                while target == label:
-                    target = torch.randint(0, 10, (1,)).to(device)
-
-            # attacks
-            if attack == 'FGSM_Targeted':
-                adv_img = fgsm_targeted(dataset, model, img, target, eps)
-
-            elif attack == 'FGSM_Untargeted':
-                adv_img = fgsm_untargeted(dataset, model, img, label, eps)
-
-            elif attack == 'PGD_Targeted':
-                adv_img = pgd_targeted(dataset, model, img, target, k, eps, eps_step)
-
-            elif attack == 'PGD_Untargeted':
-                adv_img = pgd_untargeted(dataset, model, img, label, k, eps, eps_step)
-
-
-            # evaluation
-            with torch.no_grad():
-                _, pred_orig = torch.max(model(normalize(img, dataset)), 1)
-                _, pred_adv = torch.max(model(normalize(adv_img, dataset)), 1)
-
+                # Targeted attack: random target
                 if 'Targeted' in attack:
-                    if pred_adv == target:
-                        success += 1
-                else:
-                    if pred_adv != label:
-                        success += 1
+                    target = label
+                    while target == label:
+                        target = torch.randint(0, 10, (1,)).to(device)
 
-                # 5개 시각화
-                if i in [30, 70, 100, 130, 170]:
-                    visualize_set.append({
-                        'orig': img.cpu().squeeze(),
-                        'adv': adv_img.cpu().squeeze(),
-                        'orig_label': label.item(),
-                        'adv_pred': pred_adv.item()
-                    })
+                # attacks
+                if attack == 'FGSM_Targeted':
+                    adv_img = fgsm_targeted(dataset, model, img, target, eps)
 
-        print(f"[{dataset}] {attack} Success Rate: {success / 200 * 100:.2f}%")
-        save_plot(visualize_set, dataset, attack)
+                elif attack == 'FGSM_Untargeted':
+                    adv_img = fgsm_untargeted(dataset, model, img, label, eps)
+
+                elif attack == 'PGD_Targeted':
+                    adv_img = pgd_targeted(dataset, model, img, target, k, eps, eps_step)
+
+                elif attack == 'PGD_Untargeted':
+                    adv_img = pgd_untargeted(dataset, model, img, label, k, eps, eps_step)
+
+
+                # evaluation
+                with torch.no_grad():
+                    _, pred_orig = torch.max(model(normalize(img, dataset)), 1)
+                    _, pred_adv = torch.max(model(normalize(adv_img, dataset)), 1)
+
+                    if 'Targeted' in attack:
+                        if pred_adv == target:
+                            success += 1
+                    else:
+                        if pred_adv != label:
+                            success += 1
+
+                    # 5개 시각화
+                    if i in [30, 70, 100, 130, 170]:
+                        visualize_set.append({
+                            'orig': img.cpu().squeeze(),
+                            'adv': adv_img.cpu().squeeze(),
+                            'orig_label': label.item(),
+                            'adv_pred': pred_adv.item()
+                        })
+
+            print(f"[{dataset}] {attack}_{eps} Success Rate: {success / 200 * 100:.2f}%")
+            save_plot(visualize_set, dataset, attack, eps)
 
 # save results PNG
-def save_plot(samples, dataset, attack):
+def save_plot(samples, dataset, attack, eps):
     fig, axes = plt.subplots(5, 3, figsize=(10, 15))
     for i, s in enumerate(samples):
         # tensor -> numpy
@@ -283,27 +284,27 @@ def save_plot(samples, dataset, attack):
         axes[i, 1].set_title(f"Adv (Pred: {s['adv_pred']})")
         axes[i, 1].axis('off')
 
-        # Perturbation img (x10)
-        diff = np.clip((adv - orig) * 10, 0, 1)
+        # Perturbation img (x3)
+        diff = np.clip((adv - orig) * 3, 0, 1)
         axes[i, 2].imshow(diff, cmap='gray' if dataset == 'MNIST' else None)
-        axes[i, 2].set_title("Perturbation (x10)")
+        axes[i, 2].set_title("Perturbation (x3)")
         axes[i, 2].axis('off')
 
     plt.suptitle(f"{dataset} - {attack}", fontsize=16)
     plt.tight_layout()
-    plt.savefig(f"results/{dataset}_{attack}.png")
+    plt.savefig(f"results/{dataset}_{attack}_eps{eps}.png")
     plt.close()
 
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    eps_list = [0.05, 0.1, 0.2, 0.3]
     # 1. MNIST
     print("--- Starting MNIST Experiment ---")
     mnist_model = train_and_test(dataset='MNIST', epochs=10)
-    evaluate_attack('MNIST', mnist_model, eps=0.3, eps_step=0.01, k=40)
+    evaluate_attack('MNIST', mnist_model, eps_list=eps_list, eps_step=0.01, k=40)
 
     # 2. CIFAR-10
     print("\n--- Starting CIFAR-10 Experiment ---")
     cifar_model = train_and_test(dataset='CIFAR-10', epochs=20)
-    evaluate_attack('CIFAR-10', cifar_model, eps=0.03, eps_step=0.01, k=40)
+    evaluate_attack('CIFAR-10', cifar_model, eps_list=eps_list, eps_step=0.01, k=40)
